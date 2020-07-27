@@ -1,5 +1,6 @@
 import sqlite3
-from flask import Flask, render_template, g
+from flask import Flask, render_template, g, request
+from datetime import datetime
 
 app = Flask('jobs')
 
@@ -45,3 +46,14 @@ def employer(employer_id: int):
   jobs = execute_sql('SELECT job.id, job.title, job.description, job.salary FROM job JOIN employer ON employer.id = job.employer_id WHERE employer.id = ?', [employer_id])
   reviews = execute_sql('SELECT review, rating, title, date, status FROM review JOIN employer ON employer.id = review.employer_id WHERE employer.id = ?', [employer_id])
   return render_template('employer.html', employer=employer, jobs=jobs, reviews=reviews)
+
+@app.route('/employer/<employer_id>/review', methods=('GET', 'POST'))
+def review(employer_id: int):
+  if request.method == 'POST':
+    review: str = request.form['review']
+    rating: int = request.form['rating']
+    title: str = request.form['title']
+    status: str = request.form['status']
+    date = datetime.now().strftime("%m/%d/%Y")
+    execute_sql('INSERT INTO review (review, rating, title, date, status, employer_id) VALUES (?, ?, ?, ?, ?, ?)', (review, rating, title, date, status, employer_id), commit=True)
+  return render_template('review.html', employer_id=employer_id)
